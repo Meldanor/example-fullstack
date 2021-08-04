@@ -1,0 +1,101 @@
+version: "3.9"
+services:
+  api:
+    build:
+      context: api
+    ports:
+      - "5000:5000"
+    volumes:
+      - "./api/build.gradle:/app/build.gradle"
+      - "./api/settings.gradle:/app/settings.gradle"
+      - "./api/src:/app/src"
+    depends_on:
+      - postgres
+      - postgres_test
+      - elasticsearch
+      - elasticsearch_test
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=PathPrefix(`/api`)"
+      - "traefik.http.routers.api.priority=10"
+      - "traefik.http.routers.api.entrypoints=web"
+  frontend:
+    build:
+      context: frontend
+    ports:
+      - "5001:8080"
+    volumes:
+      - "./frontend/src:/app/src"
+      - "./frontend/package.json:/app/package.json"
+      - "./frontend/yarn.lock:/app/yarn.lock"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.frontend.priority=10"
+      - "traefik.http.routers.frontend.entrypoints=web"
+  proxy:
+    image: traefik:v2.5
+    command:
+      - "--log.level=INFO"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+    # Give Traefik access to your docker
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+  postgres:
+    image: postgres:12-alpine
+    ports:
+      - "12425:5432"
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_DB: app_development
+      POSTGRES_PASSWORD: app
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  postgres_test:
+    image: postgres:12-alpine
+    ports:
+      - "12426:5432"
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_DB: app_test
+      POSTGRES_PASSWORD: app
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    environment:
+      - "discovery.type=single-node"
+
+  elasticsearch_test:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
+    ports:
+      - "9201:9200"
+    environment:
+      - "discovery.type=single-node"
+
+  prometheus:
+    image: prom/prometheus:v2.28.1
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"
+
+volumes:
+  postgres-data:
+  elasticsearch-data:
+  prometheus_data:
