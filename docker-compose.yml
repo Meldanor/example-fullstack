@@ -17,6 +17,9 @@ services:
     environment:
       SPRING_ELASTICSEARCH_REST_URIS: "elasticsearch:9200"
       SERVER_SERVLET_CONTEXT_PATH: "/api"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:12425/app_development"
+      SPRING_DATASOURCE_USERNAME: app
+      SPRING_DATASOURCE_PASSWORD: app
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.rule=PathPrefix(`/api`)"
