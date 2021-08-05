@@ -1,4 +1,3 @@
-my global config
 global:
   scrape_interval:     15s # By default, scrape targets every 15 seconds.
   evaluation_interval: 15s # By default, scrape targets every 15 seconds.
@@ -8,20 +7,6 @@ global:
   # external systems (federation, remote storage, Alertmanager).
   external_labels:
     monitor: 'my-project'
-
-# Load and evaluate rules in this file every 'evaluation_interval' seconds.
-rule_files:
-  - 'alert.rules'
-  # - "first.rules"
-  # - "second.rules"
-
-# alert
-alerting:
-  alertmanagers:
-    - scheme: http
-      static_configs:
-        - targets:
-            - "alertmanager:9093"
 
 # A scrape configuration containing exactly one endpoint to scrape:
 # Here it's Prometheus itself.
@@ -41,6 +26,6 @@ scrape_configs:
 
     # Override the global default and scrape targets from this job every 5 seconds.
     scrape_interval: 5s
-
+    metrics_path: /api/actuator/prometheus
     static_configs:
-      - targets: ['api:9090']
+      - targets: ['api:8080']
